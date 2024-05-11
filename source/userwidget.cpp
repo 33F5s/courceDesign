@@ -20,7 +20,7 @@ userWidget::userWidget(QWidget *parent) :
     ui->pushButton_delete->setText("注销账号");
 
     //tableView borrow 部分
-    ui->label_bookName->setText("请输入借书的书名");
+    ui->label_bookName->setText("请输入借书的书名/编号/作者");
     borrow_model = new QStandardItemModel(this);
     ui->tableView_borrow->setModel(borrow_model);
     borrow_headList<<"编号"<<"书名"<<"出版社"<<"作者"<<"余量"<<"种类"<<"类型"<<"所在楼层";
@@ -136,7 +136,10 @@ void userWidget::borrowDoubleClickedSlot(const QModelIndex &index){
                     .arg(user)
                     .arg(bookCode)
                     .arg(current_time.toString("yyyy-MM-dd")));
-    //更新 借书记录表
+    //更新用户表
+    qry.exec(QString("update user set borrowBooks=borrowBooks+1 where name='%1'").arg(user));
+    
+    //更新借书记录表
     reSlot();
     QMessageBox::information(this,"提示","借书成功");
     ui->borrowWidget->hide();
@@ -181,9 +184,11 @@ void userWidget::returnSlot(){
 
     bno = qry.value(2).toString();
     QDateTime current_time = QDateTime::currentDateTime();
+    //更新还书时间，还完书后数量，user借书数量
     if(qry.exec(QString("update borrow set return_time='%1' where name='%2' and return_time is null").arg(current_time.toString("yyyy-MM-dd")).arg(user)))
-        if(qry.exec(QString("update book set bnumber=bnumber+1 where bno='%1'").arg(bno)))          
-            QMessageBox::information(this,"提示","还书成功");
+        if(qry.exec(QString("update book set bnumber=bnumber+1 where bno='%1'").arg(bno)))
+            if(qry.exec(QString("update user set borrowBooks=borrowBooks-1 where name='%1'").arg(user)));          
+                QMessageBox::information(this,"提示","还书成功");
 
     reSlot();
     searchSlot(ui->lineEdit_bookName->text());

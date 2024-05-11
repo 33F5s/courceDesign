@@ -48,6 +48,8 @@ Widget::Widget(QWidget *parent) :
     connect(rootPage,&rootWidget::backHome,[&]{
         ui->stackedWidget->setCurrentIndex(loginPageNum);
     });
+    connect(this,&Widget::sendDB,rootPage,&rootWidget::receviceDB);
+    connect(this,&Widget::sendRootUser,rootPage,&rootWidget::receviceRootUser);
 
    connect(ui->pushButton_user,&QPushButton::clicked,this,&Widget::userSlot);
    connect(ui->pushButton_root,&QPushButton::clicked,this,&Widget::rootSlot);
@@ -100,16 +102,16 @@ void Widget::rootSlot(){
         QString admin = dialog.admin();
         QString passwd = dialog.passwd();
         QSqlQuery qry;
-        qry.exec(QString("select permission from user where name='%1' and passwd='%2';").arg(admin).arg(passwd));
-        if(qry.next()){
-            if(qry.value(0).toInt()<1)
-                QMessageBox::warning(this,"权限错误","该用户无管理员权限");
-            else
+        // qry.exec(QString("select permission from user where name='%1' and passwd='%2';").arg(admin).arg(passwd));
+        // if(qry.next()){
+        //     if(qry.value(0).toInt()<1)
+        //         QMessageBox::warning(this,"权限错误","该用户无管理员权限");
+        //     else
                 ui->stackedWidget->setCurrentIndex(rootPageNum);
                 emit sendRootUser(admin);
-        }
-        else{
-            QMessageBox::warning(this,"登录错误","请检查用户名与密码");
-        }
+        // }
+        // else{
+        //     QMessageBox::warning(this,"登录错误","请检查用户名与密码");
+        // }
     }
 }
