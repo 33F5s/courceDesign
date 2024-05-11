@@ -15,7 +15,7 @@ Widget::Widget(QWidget *parent) :
     ui->setupUi(this);
 
     db = QSqlDatabase::addDatabase("QMYSQL");
-    db.setHostName("47.108.223.15");
+    db.setHostName("xxxx");
     db.setPort(3306);
     db.setUserName("root");
     db.setPassword("123456");
