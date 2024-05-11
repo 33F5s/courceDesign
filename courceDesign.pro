@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -26,15 +26,24 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        widget.cpp
+        ./source/widget.cpp \
+        ./source/dialog.cpp \
+        ./source/userwidget.cpp \
+        ./source/rootwidget.cpp
 
 HEADERS += \
-        widget.h
+        ./include/widget.h \
+        ./include/dialog.h \
+        ./include/userwidget.h \
+        ./include/rootwidget.h
 
 FORMS += \
-        widget.ui
+        ./ui/widget.ui \
+        ./ui/userwidget.ui \
+        ./ui/rootwidget.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
