@@ -52,8 +52,11 @@ userWidget::~userWidget()
 
 void userWidget::borrowShowSlot(){
     if(!ui->borrowWidget->isHidden())return;
+    //列出有的书
+    searchSlot("");
     QSqlQuery qry;
-    qry.exec(QString("select name from borrow where name='%1' and return_time is null").arg(user));
+    //查询未还书
+    qry.exec(QString("select borrowBook from user where name='%1' and borrowBook is not null").arg(user));
     qry.next();
     if(qry.isValid()){
         QMessageBox::warning(this,"警告","当前有书未还");
@@ -62,13 +65,15 @@ void userWidget::borrowShowSlot(){
     ui->borrowWidget->show();
 }
 
+//查询书籍
 void userWidget::searchSlot(const QString &str){
     QSqlQuery qry;
     QString command;
+    //搜索书籍（内连接book和grenre表）
     if(str.size()==0)
         command="select bno,bname,bauthor,bhouse,bnumber,book.kind,type,floor from book,grenre where book.kind=grenre.kind";
     else
-        command=QString("select bno,bname,bauthor,bhouse,bnumber,book.kind,type,floor from book,grenre where book.kind=grenre.kind and (bname like '%%1%' or bno like '%%1%' or bauthor like '%%1%')").arg(str);
+        command=QString("select bno,bname,bauthor,bhouse,bnumber,book.kind,type,floor from book,grenre where book.kind=grenre.kind and (bname like '%1%' or bno like '%1%' or bauthor like '%1%')").arg(str);
     if(!qry.exec(command)){
         qDebug()<<"query wrong";
         return;
@@ -92,39 +97,20 @@ void userWidget::receviceDB(QSqlDatabase db){
 
 void userWidget::receviceUser(QString user){
     this->user=user;
-    QSqlQuery qry;
-    qry.exec(QString("select name,borrow.bno,bname,borrow_time,time_cnt,return_time,money from borrow,book where borrow.bno=book.bno and name='%1' and return_time is null").arg(this->user));
-    int i = 0;
-    return_model->clear();
-    return_model->setHorizontalHeaderLabels(return_headList);
-    while(qry.next()){
-        for(int j = 0;j<return_headList.length();j++){
-            return_model->setItem(i, j, new QStandardItem(qry.value(j).toString()));
-        }
-        i++;
-    }
-
-    //列出有的书
-    i = 0;
-    qry.exec(QString("select bno,bname,bauthor,bhouse,bnumber,book.kind,type,floor from book,grenre where book.kind=grenre.kind"));
-    borrow_model->clear();
-    borrow_model->setHorizontalHeaderLabels(borrow_headList);
-    while(qry.next()){
-        for(int j = 0;j<borrow_headList.length();j++){
-            borrow_model->setItem(i, j, new QStandardItem(qry.value(j).toString()));
-        }
-        i++;
-    }
+    //查询未还的书
+    reSlot();
 }
 
+//借书
 void userWidget::borrowDoubleClickedSlot(const QModelIndex &index){
     QString bookCode = borrow_model->index(index.row(),0).data().toString();
     QSqlQuery qry;
-    if(!qry.exec(QString("update book set bnumber=bnumber-1 where bno='%1'").arg(bookCode))){
-        QMessageBox::warning(this,"错误","数量不足");
-        searchSlot(ui->lineEdit_bookName->text());
-        return;
-    }
+    //借书，尝试更新表（bnumber>=0），更新失败表示数量不足 改由触发器实现
+    // if(!qry.exec(QString("update book set bnumber=bnumber-1 where bno='%1'").arg(bookCode))){
+    //     QMessageBox::warning(this,"错误","数量不足");
+    //     searchSlot(ui->lineEdit_bookName->text());
+    //     return;
+    // }
 
     //重新查询 更新TableView
     searchSlot(ui->lineEdit_bookName->text());
@@ -132,22 +118,28 @@ void userWidget::borrowDoubleClickedSlot(const QModelIndex &index){
     QDateTime current_time = QDateTime::currentDateTime();
     //qDebug()<<current_time.toString("yyyy-MM-dd");
     //添加一条借书记录
-    qry.exec(QString("insert into borrow (name,bno,borrow_time,time_cnt,money) values ('%1','%2','%3',0,0)")
+    bool ok = qry.exec(QString("insert into borrow (name,bno,borrow_time,time_cnt,money) values ('%1','%2','%3',0,0)")
                     .arg(user)
                     .arg(bookCode)
                     .arg(current_time.toString("yyyy-MM-dd")));
-    //更新用户表
-    qry.exec(QString("update user set borrowBooks=borrowBooks+1 where name='%1'").arg(user));
+    if(!ok){
+        QMessageBox::warning(this,"错误","数量不足");
+        searchSlot(ui->lineEdit_bookName->text());
+        return;
+    }
+    //更新用户表（设置borrowBook为borrow表中的索引） 改为MySql触发器实现
+    //qry.exec(QString("update user set borrowBook=select id from ").arg(user));
     
-    //更新借书记录表
+    //刷新显示借书记录表
     reSlot();
     QMessageBox::information(this,"提示","借书成功");
     ui->borrowWidget->hide();
 }
 
+//显示当前用户所借书
 void userWidget::reSlot(){
     QSqlQuery qry;
-    qry.exec(QString("select name,borrow.bno,bname,borrow_time,time_cnt,return_time,money from borrow,book where borrow.bno=book.bno and name='%1' and return_time is null").arg(this->user));
+    qry.exec(QString("select name,borrow.bno,bname,borrow_time,time_cnt,return_time,money from borrow,book where borrow.bno=book.bno and id=(select borrowBook from user where name='%1' and borrowBook is not null)").arg(this->user));
     int i = 0;
     return_model->clear();
     return_model->setHorizontalHeaderLabels(return_headList);
@@ -162,7 +154,8 @@ void userWidget::reSlot(){
 void userWidget::returnSlot(){
     QSqlQuery qry;
     QString bno;
-    qry.exec(QString("select name,money,bno from borrow where name='%1' and return_time is null").arg(user));
+    //查询未还书，以及所需交的罚款
+    qry.exec(QString("select name,money,bno from borrow where id=(select borrowBook from user where name='%1' and borrowBook is not null)").arg(user));
     qry.next();
     
     if(!qry.isValid()){
@@ -184,21 +177,21 @@ void userWidget::returnSlot(){
 
     bno = qry.value(2).toString();
     QDateTime current_time = QDateTime::currentDateTime();
-    //更新还书时间，还完书后数量，user借书数量
-    if(qry.exec(QString("update borrow set return_time='%1' where name='%2' and return_time is null").arg(current_time.toString("yyyy-MM-dd")).arg(user)))
-        if(qry.exec(QString("update book set bnumber=bnumber+1 where bno='%1'").arg(bno)))
-            if(qry.exec(QString("update user set borrowBooks=borrowBooks-1 where name='%1'").arg(user)));          
-                QMessageBox::information(this,"提示","还书成功");
-
+    //更新还书时间，还完书后数量，user借书数量（MySql触发器实现）此处只需更新borrow表
+    qry.exec(QString("select borrowBook from user where name='%1' and borrowBook is not null").arg(user));
+    qry.next();
+    QString id=qry.value(0).toString();
+    if(qry.exec(QString("update borrow set return_time='%1' where id=%2").arg(current_time.toString("yyyy-MM-dd")).arg(id)))
+        QMessageBox::information(this,"提示","还书成功");
     reSlot();
-    searchSlot(ui->lineEdit_bookName->text());
 }
 
 //注销账号
 void userWidget::deleteSlot(){
     bool ok;
     QSqlQuery qry;
-    qry.exec(QString("select * from borrow where name='%1' and return_time is null").arg(user));
+    //查询未还的书
+    qry.exec(QString("select * from user where name='%1' and borrowBook is not null").arg(user));
     qry.next();
     if(qry.isValid()){
         QMessageBox::information(this,"注意","请先归还书籍");

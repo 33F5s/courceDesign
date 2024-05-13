@@ -34,7 +34,9 @@ private slots:
 private:
     Ui::userWidget *ui;
     QSqlDatabase db;
+    //显示书库存
     QStandardItemModel *borrow_model;
+    //显示未还书
     QStandardItemModel *return_model;
     QStringList borrow_headList;
     QStringList return_headList;
