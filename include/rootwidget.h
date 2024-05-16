@@ -38,8 +38,11 @@ private slots:
     void comboBoxUserSlot(int index);   //用户类型筛选
     void comboBoxBorrowSlot(int index); //借与未借书筛选
 
-    void minBnumberSlot();
-    void maxBnumberSlot();
+    void minBnumberSlot();  //书的最少数量
+    void maxBnumberSlot();  //最多数量
+
+    void minFloorSlot();    //最低楼层（grenre）
+    void maxFloorSlot();    //最高楼层（grenre）
 
 signals:
     void backHome();

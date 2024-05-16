@@ -23,7 +23,7 @@ rootWidget::rootWidget(QWidget *parent) :
     uOption={
         .type=option::bothUser,
         .state=option::bothState
-        };
+    };
     userOptionWidget = new QWidget(this);
     userOptionWidget->setGeometry(1040,220,200,150);
     QVBoxLayout *userLayout = new QVBoxLayout(userOptionWidget);
@@ -90,6 +90,8 @@ rootWidget::rootWidget(QWidget *parent) :
     bookFloorLayout->addWidget(lineEdit_maxFloor);
     grenreLayout->addWidget(new QLabel("输入楼层范围(共4楼):"));
     grenreLayout->addLayout(bookFloorLayout);
+    connect(lineEdit_minFloor,&QLineEdit::textChanged,this,&rootWidget::minFloorSlot);
+    connect(lineEdit_maxFloor,&QLineEdit::textChanged,this,&rootWidget::maxFloorSlot);
 
     ui->pushButton_home->setText("退出");
     ui->pushButton_re->setText("刷新");
@@ -171,6 +173,7 @@ void rootWidget::selectTable(){
 
     userOptionWidget->hide();
     bookOptionWidget->hide();
+
     grenreOptionWidget->hide();
     switch (tableNow)
     {
@@ -211,28 +214,28 @@ void rootWidget::selectTable(){
 void rootWidget::userSlot(bool b){
     if(!b)return;
     tableNow = userNum;
-    ui->label_search->setText("输入用户名查找");
+    ui->label_search->setText("输入用户名查找:");
     selectTable();
 }
 
 void rootWidget::borrowSlot(bool b){
     if(!b)return;
     tableNow = borrowNum;
-    ui->label_search->setText("输入用户名查找");
+    ui->label_search->setText("输入用户名查找:");
     selectTable();
 }
 
 void rootWidget::bookSlot(bool b){
     if(!b)return;
     tableNow = bookNum;
-    ui->label_search->setText("输入书名查找");
+    ui->label_search->setText("输入书名查找:");
     selectTable();
 }
 
 void rootWidget::grenreSlot(bool b){
     if(!b)return;
     tableNow = grenreNum;
-    ui->label_search->setText("输入类型查找");
+    ui->label_search->setText("输入类型查找:");
     selectTable();
 }
 
@@ -386,8 +389,10 @@ void rootWidget::getUserCommand(){
         default:
             break;
     }
-    if(!ui->lineEdit_search->text().isEmpty())
-        command+=QString(" and name like '%1%'").arg(ui->lineEdit_search->text());
+    if(!ui->lineEdit_search->text().isEmpty()){
+        if(!command.isEmpty())command+=" and ";
+        command+=QString(" name like '%1%'").arg(ui->lineEdit_search->text());
+    }
 }
 
 void rootWidget::getBookCommand(){
@@ -420,5 +425,29 @@ void rootWidget::maxBnumberSlot(){
 }
 
 void rootWidget::getGrenreCommand(){
+    command=QString(" floor>=%1 and floor<=%2 ").arg(gOption.minFloor).arg(gOption.maxFloor);
+    if(!ui->lineEdit_search->text().isEmpty())
+        command+=QString(" and type like '%1%'").arg(ui->lineEdit_search->text());
+}
 
+void rootWidget::minFloorSlot(){
+    int min = lineEdit_minFloor->text().toInt();
+    int max = lineEdit_maxFloor->text().toInt();
+    if(min>max){
+        QMessageBox::information(this,"提示","最小值大于最大值");
+        lineEdit_minFloor->setText(QString::number(gOption.minFloor)); //设置为之前的值
+        return;
+    }
+    gOption.minFloor=min;
+}
+
+void rootWidget::maxFloorSlot(){
+    int min = lineEdit_minFloor->text().toInt();
+    int max = lineEdit_maxFloor->text().toInt();
+    if(min>max){
+        QMessageBox::information(this,"提示","最小值大于最大值");
+        lineEdit_maxFloor->setText(QString::number(gOption.maxFloor)); //设置为之前的值
+        return;
+    }
+    gOption.maxFloor=max;
 }
