@@ -29,13 +29,15 @@ SOURCES += \
         ./source/widget.cpp \
         ./source/dialog.cpp \
         ./source/userwidget.cpp \
-        ./source/rootwidget.cpp
+        ./source/rootwidget.cpp \
+    ./source/option.cpp
 
 HEADERS += \
         ./include/widget.h \
         ./include/dialog.h \
         ./include/userwidget.h \
-        ./include/rootwidget.h
+        ./include/rootwidget.h \
+    ./include/option.h
 
 FORMS += \
         ./ui/widget.ui \

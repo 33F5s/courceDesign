@@ -31,6 +31,7 @@ private slots:
     void returnSlot();
     void deleteSlot();
     void backSlot();
+    void cPassWdSlot();
 private:
     Ui::userWidget *ui;
     QSqlDatabase db;

@@ -13,9 +13,10 @@ Widget::Widget(QWidget *parent) :
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
+    this->resize(640,480);
 
     db = QSqlDatabase::addDatabase("QMYSQL");
-    db.setHostName("xxxx");
+    db.setHostName("47.108.223.15");
     db.setPort(3306);
     db.setUserName("root");
     db.setPassword("123456");
@@ -38,6 +39,7 @@ Widget::Widget(QWidget *parent) :
     ui->stackedWidget->insertWidget(userPageNum,userPage);
     connect(userPage,&userWidget::backHome,[&]{
         ui->stackedWidget->setCurrentIndex(loginPageNum);
+        this->resize(640,480);
     });
     connect(this,&Widget::sendDB,userPage,&userWidget::receviceDB);
     connect(this,&Widget::sendUser,userPage,&userWidget::receviceUser);
@@ -47,6 +49,7 @@ Widget::Widget(QWidget *parent) :
     ui->stackedWidget->insertWidget(rootPageNum,rootPage);
     connect(rootPage,&rootWidget::backHome,[&]{
         ui->stackedWidget->setCurrentIndex(loginPageNum);
+        this->resize(640,480);
     });
     connect(this,&Widget::sendDB,rootPage,&rootWidget::receviceDB);
     connect(this,&Widget::sendRootUser,rootPage,&rootWidget::receviceRootUser);
@@ -84,11 +87,16 @@ void Widget::userSlot(){
     if (dialog.exec() == QDialog::Accepted) {
         QString admin = dialog.admin();
         QString passwd = dialog.passwd();
+        if(admin.size()==0 || passwd.size()==0){
+            QMessageBox::warning(this,"警告","用户名或密码为空");
+            return;
+        }
         QSqlQuery qry;
         qry.exec(QString("select permission from user where name='%1' and passwd='%2';").arg(admin).arg(passwd));
         if(qry.next()){
             ui->stackedWidget->setCurrentIndex(userPageNum);
             emit sendUser(admin);
+            this->resize(1280,720);
         }
         else{
             QMessageBox::warning(this,"登录错误","请检查用户名与密码或进行注册");
@@ -109,6 +117,7 @@ void Widget::rootSlot(){
         //     else
                 ui->stackedWidget->setCurrentIndex(rootPageNum);
                 emit sendRootUser(admin);
+                this->resize(1280,720);
         // }
         // else{
         //     QMessageBox::warning(this,"登录错误","请检查用户名与密码");

@@ -11,10 +11,12 @@ class Dialog : public QDialog
 {
     Q_OBJECT
 public:
-    Dialog(int type,QWidget *parent = nullptr);
+    Dialog(int type=0,QWidget *parent = nullptr);
     QString admin();
     QString passwd();
     bool confirmPasswd();
+    void setAdmin(const QString &admin);
+    void setNoEditedAdmin();
 
 private slots:
 

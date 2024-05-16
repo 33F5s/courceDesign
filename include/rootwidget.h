@@ -7,12 +7,15 @@
 #include <QtSql/QtSql>
 #include <QStandardItem>
 #include <QVector>
+#include <QVBoxLayout>
+#include <QWidget>
+#include "../include/option.h"
 
 namespace Ui {
 class rootWidget;
 }
 
-typedef enum tableNum{userNum=0,bookNum,borrowNum,grenreNum}tablNum;
+typedef enum {userNum=0,bookNum,borrowNum,grenreNum}tableNum;
 
 class rootWidget : public QWidget
 {
@@ -29,6 +32,15 @@ private slots:
     void borrowSlot(bool b);
     void bookSlot(bool b);
     void grenreSlot(bool b);
+
+    void subSlot();
+    void cPasswdSlot();
+    void comboBoxUserSlot(int index);   //用户类型筛选
+    void comboBoxBorrowSlot(int index); //借与未借书筛选
+
+    void minBnumberSlot();
+    void maxBnumberSlot();
+
 signals:
     void backHome();
 private:
@@ -40,9 +52,31 @@ private:
     QVector<QStringList>tableHead;
     QVector<QString>tableName;
 
+    QString command;    //记录筛选条件
+
+    QWidget *userOptionWidget;  //user表的筛选条件窗口
+    QWidget *bookOptionWidget;  //book表的筛选条件窗口
+    QWidget *grenreOptionWidget;  //grenre表的筛选条件窗口
+
     tableNum tableNow;
 
+    QLineEdit *lineEdit_minBNumer;  //book的数量的最小和最大值输入框
+    QLineEdit *lineEdit_maxBNumer;
+
+    QLineEdit *lineEdit_minFloor;  //grenre楼层
+    QLineEdit *lineEdit_maxFloor;
+
+    struct option::userOption uOption;  //记录user表查询筛选条件
+    struct option::bookOption bkOption; //记录book表查询筛选条件
+    struct option::grenreOption gOption;//记录grenre表查询筛选条件
+    void getUserCommand();      //获取user表的筛选条件
+    void getBookCommand();      //获取book表筛选条件
+    void getGrenreCommand();    //获取grenre表筛选条件
+
+    void getCommand();  //获取当前表的筛选条件
+
     void selectTable();
+    void setOptionWidget();
 };
 
 #endif // ROOTWIDGET_H

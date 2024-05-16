@@ -1,6 +1,6 @@
 #include "../include/dialog.h"
 
-Dialog::Dialog(int type=0, QWidget *parent)
+Dialog::Dialog(int type, QWidget *parent)
     : QDialog(parent)
 {
 
@@ -8,15 +8,15 @@ Dialog::Dialog(int type=0, QWidget *parent)
 
     if(type==0){
         setFixedSize(280, 180);
-        setWindowTitle(QString::fromLocal8Bit("登录"));
+        setWindowTitle("登录");
 
         m_buttonBox->setFixedSize(180, 40);
         m_buttonBox->move(30, 120);
     }
-    else{
+    else if(type==1){
         setFixedSize(280, 220);
 
-        setWindowTitle(QString::fromLocal8Bit("注册"));
+        setWindowTitle("注册");
         m_confirmButton = new QPushButton(tr("确认密码"), this);
         m_confirmButton->setFixedSize(80, 30);
         m_confirmButton->move(30, 110);
@@ -69,4 +69,11 @@ bool Dialog::confirmPasswd(){
     return (m_passwdLineEdit->text() == m_confirmLineEdit->text());
 }
 
+void Dialog::setAdmin(const QString &admin){
+    m_adminLineEdit->setText(admin);
+}
+
+void Dialog::setNoEditedAdmin(){
+    m_adminLineEdit->setReadOnly(true);
+}
 

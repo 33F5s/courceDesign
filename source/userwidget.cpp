@@ -1,4 +1,5 @@
 #include "../include/userwidget.h"
+#include "../include/dialog.h"
 #include "ui_userwidget.h"
 #include <QDebug>
 #include <QMessageBox>
@@ -18,6 +19,8 @@ userWidget::userWidget(QWidget *parent) :
     ui->pushButton_re->setText("刷新");
     ui->pushButton_return->setText("还书");
     ui->pushButton_delete->setText("注销账号");
+    ui->pushButton_search->setText("搜索");
+    ui->pushButton_cPassWd->setText("修改密码");
 
     //tableView borrow 部分
     ui->label_bookName->setText("请输入借书的书名/编号/作者");
@@ -35,10 +38,14 @@ userWidget::userWidget(QWidget *parent) :
 
     connect(ui->pushButton_borrow,&QPushButton::clicked,this,&userWidget::borrowShowSlot);
     connect(ui->pushButton_home,&QPushButton::clicked,this,&userWidget::backSlot);
+    connect(ui->pushButton_search,&QPushButton::clicked,[&]{
+        searchSlot(ui->lineEdit_bookName->text());
+    });
     connect(ui->lineEdit_bookName,&QLineEdit::textEdited,this,&userWidget::searchSlot);
     connect(ui->pushButton_re,&QPushButton::clicked,this,&userWidget::reSlot);
     connect(ui->pushButton_return,&QPushButton::clicked,this,&userWidget::returnSlot);
     connect(ui->pushButton_delete,&QPushButton::clicked,this,&userWidget::deleteSlot);
+    connect(ui->pushButton_cPassWd,&QPushButton::clicked,this,&userWidget::cPassWdSlot);
 
     //双击选择书
     connect(ui->tableView_borrow,&QTableView::doubleClicked,this,&userWidget::borrowDoubleClickedSlot);
@@ -97,6 +104,7 @@ void userWidget::receviceDB(QSqlDatabase db){
 
 void userWidget::receviceUser(QString user){
     this->user=user;
+    ui->label_name->setText(QString("当前用户：%1").arg(user));
     //查询未还的书
     reSlot();
 }
@@ -167,9 +175,15 @@ void userWidget::returnSlot(){
         QStringList item;
         bool ok;
         item<<"微信"<<"支付宝";
-        QInputDialog::getItem(this,"付款","请选择付款方式",item,0,true,&ok);
+        QString str = QInputDialog::getItem(this,"付款","请选择付款方式",item,0,true,&ok);
         if(ok){
             QMessageBox::information(this,"付款信息","付款成功");
+            // if(str==item[0]){
+
+            // }
+            // else if(str==str[1]){
+
+            // }
         }
         else 
             return;
@@ -220,6 +234,24 @@ void userWidget::deleteSlot(){
 
         backSlot();
         QMessageBox::information(this,"提示","账号已注销");
+    }
+}
+
+//修改密码槽函数
+void userWidget::cPassWdSlot(){
+    Dialog dialog(1,this);
+    dialog.setWindowTitle("修改密码");
+    dialog.setAdmin(user);
+    dialog.setNoEditedAdmin();
+    if(dialog.exec()!=QDialog::Accepted)return;
+    if(!dialog.confirmPasswd()){
+        QMessageBox::information(this,"提示","两次密码不一致");
+        return;
+    }
+    QString passwd = dialog.passwd();
+    QSqlQuery qry;
+    if(qry.exec(QString("update user set passwd='%1' where name='%2'").arg(passwd).arg(user))){
+        QMessageBox::information(this,"提示","修改成功");
     }
 }
 
