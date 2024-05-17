@@ -5,6 +5,7 @@
 #include "../include/rootwidget.h"
 #include <QDebug>
 #include <QMessageBox>
+#include <QFile>
 
 enum page{loginPageNum=0,userPageNum,rootPageNum};
 
@@ -15,12 +16,22 @@ Widget::Widget(QWidget *parent) :
     ui->setupUi(this);
     this->resize(640,480);
 
+    QFile info("../serverInfo.txt");
+    info.open(QIODevice::ReadOnly);
+    QByteArray getInfo[5];
+    int i=0;
+    while(!info.atEnd()){
+        getInfo[i]=info.readLine();
+        getInfo[i] = getInfo[i].mid(0,getInfo[i].lastIndexOf('\n'));
+        i++;
+    }
+
     db = QSqlDatabase::addDatabase("QMYSQL");
-    db.setHostName("47.108.223.15");
-    db.setPort(3306);
-    db.setUserName("root");
-    db.setPassword("123456");
-    db.setDatabaseName("library");
+    db.setHostName(getInfo[0]);
+    db.setPort(getInfo[1].toInt());
+    db.setUserName(getInfo[2]);
+    db.setPassword(getInfo[3]);
+    db.setDatabaseName(getInfo[4]);
 
     if(db.open()){
         qDebug()<<"open success";
