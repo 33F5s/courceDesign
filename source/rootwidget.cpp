@@ -7,7 +7,6 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QLabel>
-#include <QComboBox>
 #include "../include/dialog.h"
 
 rootWidget::rootWidget(QWidget *parent) :
@@ -18,19 +17,16 @@ rootWidget::rootWidget(QWidget *parent) :
 
     ui->label->setText("选择表");
     ui->label_search->setText("输入用户名查找:");
+    ui->label_search_2->setText("输入书编号查找");
 
     //user表对应功能菜单
-    uOption={
-        .type=option::bothUser,
-        .state=option::bothState
-    };
     userOptionWidget = new QWidget(this);
     userOptionWidget->setGeometry(1040,220,200,150);
     QVBoxLayout *userLayout = new QVBoxLayout(userOptionWidget);
     QHBoxLayout *userTypeLayout = new QHBoxLayout();
-    QHBoxLayout *borrowStateLayout = new QHBoxLayout();
-    QComboBox *comboBox_userKind = new QComboBox(userOptionWidget);
-    QComboBox *comboBox_borrowed = new QComboBox(userOptionWidget);
+    QHBoxLayout *userBorrowStateLayout = new QHBoxLayout();
+    comboBox_userKind = new QComboBox(userOptionWidget);
+    comboBox_borrowed = new QComboBox(userOptionWidget);
     //qDebug()<<comboBox_userKind->size();
     comboBox_userKind->addItem("管理员/普通");
     comboBox_userKind->addItem("普通用户");
@@ -40,22 +36,27 @@ rootWidget::rootWidget(QWidget *parent) :
     comboBox_borrowed->addItem("已借/未借");
     comboBox_borrowed->addItem("已借书");
     comboBox_borrowed->addItem("未借书");
-    borrowStateLayout->addWidget(new QLabel("借书状态"));
-    borrowStateLayout->addWidget(comboBox_borrowed);    //标签和combobox的layout
+    userBorrowStateLayout->addWidget(new QLabel("借书状态"));
+    userBorrowStateLayout->addWidget(comboBox_borrowed);    //标签和combobox的layout
     userLayout->addLayout(userTypeLayout);
-    userLayout->addLayout(borrowStateLayout);
+    userLayout->addLayout(userBorrowStateLayout);
     connect(comboBox_userKind,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&rootWidget::comboBoxUserSlot);
     connect(comboBox_borrowed,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&rootWidget::comboBoxBorrowSlot);
 
     //book表对应功能菜单
-    bkOption={
-        .minCnt=0,
-        .maxCnt=999
-    };
     bookOptionWidget = new QWidget(this);
     bookOptionWidget->setGeometry(1040,220,230,100);
     QVBoxLayout *bookLayout = new QVBoxLayout(bookOptionWidget);
-    QHBoxLayout *bNumberRangeLayout = new QHBoxLayout();
+    QHBoxLayout *bNumberRangeLayout = new QHBoxLayout();    //书籍数量范围
+    QHBoxLayout *bOrderLayout = new QHBoxLayout();          //排序方式
+    comboBox_bOrder = new QComboBox(bookOptionWidget);
+    comboBox_bOrder->addItem("升序");
+    comboBox_bOrder->addItem("降序");
+    bOrderLayout->addWidget(new QLabel("按数量排序"));
+    bOrderLayout->addWidget(comboBox_bOrder);
+    connect(comboBox_bOrder,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[&](int index){
+        bkOption.order=(index==0)?option::ASC:option::DESC;
+    });
     lineEdit_minBNumer = new QLineEdit(bookOptionWidget);
     lineEdit_minBNumer->setValidator(new QRegExpValidator(QRegExp("[0-9]{3}"))); //限制只能输入数字（三位）
     lineEdit_minBNumer->setText("0");
@@ -67,14 +68,11 @@ rootWidget::rootWidget(QWidget *parent) :
     bNumberRangeLayout->addWidget(lineEdit_maxBNumer);
     bookLayout->addWidget(new QLabel("输入书籍数量范围(上限999):"));
     bookLayout->addLayout(bNumberRangeLayout);
+    bookLayout->addLayout(bOrderLayout);
     connect(lineEdit_minBNumer,&QLineEdit::textEdited,this,&rootWidget::minBnumberSlot);
     connect(lineEdit_maxBNumer,&QLineEdit::textEdited,this,&rootWidget::maxBnumberSlot);
 
     //grenre表对应功能菜单
-    gOption={
-        .minFloor=1,
-        .maxFloor=4
-    };
     grenreOptionWidget = new QWidget(this);
     grenreOptionWidget->setGeometry(1040,220,230,100);
     QVBoxLayout *grenreLayout = new QVBoxLayout(grenreOptionWidget);
@@ -92,6 +90,103 @@ rootWidget::rootWidget(QWidget *parent) :
     grenreLayout->addLayout(bookFloorLayout);
     connect(lineEdit_minFloor,&QLineEdit::textChanged,this,&rootWidget::minFloorSlot);
     connect(lineEdit_maxFloor,&QLineEdit::textChanged,this,&rootWidget::maxFloorSlot);
+
+    //borrow表对应菜单
+    borrowOptionWidget = new QWidget(this);
+    borrowOptionWidget->setGeometry(1035,220,250,250);
+    QVBoxLayout *borrowLayout = new QVBoxLayout(borrowOptionWidget);
+
+    QHBoxLayout *borrowStateLayout = new QHBoxLayout();                     //选择借书状态
+    combobox_borrowState = new QComboBox(borrowOptionWidget);
+    combobox_borrowState->addItem("所有");
+    combobox_borrowState->addItem("已还");
+    combobox_borrowState->addItem("已借未还");
+    borrowStateLayout->addWidget(new QLabel("选择借书状态"));
+    borrowStateLayout->addWidget(combobox_borrowState);
+    connect(combobox_borrowState,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[&](int index){
+        switch(index){
+            case 0:
+                boOption.state=option::allState;break;
+            case 1:
+                boOption.state=option::returned;break;
+            case 2:
+                boOption.state=option::NotReturned;break;
+            default:break;
+        }
+    });
+
+    QHBoxLayout *orderWayLayout = new QHBoxLayout();                        //选择排序方式
+    orderColumn = new QComboBox(borrowOptionWidget);
+    orderColumn->addItem("借书时间");
+    orderColumn->addItem("还书时间");
+    orderColumn->addItem("借出天数");
+    orderColumn->addItem("需交金额");
+    connect(orderColumn,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[&](int index){
+        switch(index){
+            case 0:
+                boOption.o_column=option::C_BORROW_TIME;break;
+            case 1:
+                boOption.o_column=option::C_RETURN_TIME;break;
+            case 2:
+                boOption.o_column=option::C_TIME_CNT;break;
+            case 3:
+                boOption.o_column=option::C_MONEY;break;
+            default:break;
+        }
+    });
+    orderWay = new QComboBox(borrowOptionWidget);
+    orderWay->addItem("升序");
+    orderWay->addItem("降序");
+    connect(orderWay,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[&](int index){
+        boOption.order=(index==0)?option::ASC:option::DESC;
+    });
+    orderWayLayout->addWidget(new QLabel("按"));
+    orderWayLayout->addWidget(orderColumn);
+    orderWayLayout->addWidget(orderWay);
+    orderWayLayout->addWidget(new QLabel("排序"));
+
+    QHBoxLayout *borrowDateLayout = new QHBoxLayout();                       //借书时间范围
+    borrowDateStart = new QDateTimeEdit(QDate(2024,5,1));   
+    borrowDateStart->setDisplayFormat("yyyy-MM-dd");
+    borrowDateStart->setCalendarPopup(true);
+    connect(borrowDateStart,&QDateTimeEdit::dateChanged,[&](QDate date){
+        boOption.borrowStartDate=date;
+    });
+    borrowDateEnd = new QDateTimeEdit(QDate::currentDate());
+    borrowDateEnd->setDisplayFormat("yyyy-MM-dd");
+    borrowDateEnd->setCalendarPopup(true);
+    connect(borrowDateEnd,&QDateTimeEdit::dateChanged,[&](QDate date){
+        boOption.borrowEndDate=date;
+    });
+    borrowDateLayout->addWidget(borrowDateStart);
+    borrowDateLayout->addWidget(new QLabel("-"));
+    borrowDateLayout->addWidget(borrowDateEnd);
+
+    QHBoxLayout *returnDateLayout = new QHBoxLayout();                      //还书时间范围
+    returnDateStart = new QDateTimeEdit(QDate(2024,5,1));    
+    returnDateStart->setDisplayFormat("yyyy-MM-dd");
+    returnDateStart->setCalendarPopup(true);
+    connect(returnDateStart,&QDateTimeEdit::dateChanged,[&](QDate date){
+        boOption.returnStartDate=date;
+    });
+    returnDateEnd = new QDateTimeEdit(QDate::currentDate());
+    returnDateEnd->setDisplayFormat("yyyy-MM-dd");
+    returnDateEnd->setCalendarPopup(true);
+    connect(returnDateEnd,&QDateTimeEdit::dateChanged,[&](QDate date){
+        boOption.returnEndDate=date;
+    });
+    returnDateLayout->addWidget(returnDateStart);
+    returnDateLayout->addWidget(new QLabel("-"));
+    returnDateLayout->addWidget(returnDateEnd);
+    //returnDateEnd->setEnabled(false);
+
+    borrowLayout->addLayout(borrowStateLayout);
+    borrowLayout->addLayout(orderWayLayout);
+    borrowLayout->addWidget(new QLabel("借书时间范围："));
+    borrowLayout->addLayout(borrowDateLayout);
+    borrowLayout->addWidget(new QLabel("已还书时间范围："));
+    borrowLayout->addLayout(returnDateLayout);
+
 
     ui->pushButton_home->setText("退出");
     ui->pushButton_re->setText("刷新");
@@ -148,32 +243,48 @@ rootWidget::~rootWidget()
     delete ui;
 }
 
+void rootWidget::initRoot(){
+    //初始筛选条件
+    uOption={
+        .type=option::bothUser,
+        .state=option::allState
+    };
+    bkOption={
+        .minCnt=0,
+        .maxCnt=999,
+        .order=option::ASC
+    };
+    gOption={
+        .minFloor=1,
+        .maxFloor=4
+    };
+    boOption={
+        .state=option::allState,
+        .o_column=option::C_BORROW_TIME,
+        .order=option::ASC,
+        .borrowStartDate=QDate(2024,5,1),
+        .borrowEndDate=QDate(QDate::currentDate()),
+        .returnStartDate=QDate(2024,5,1),
+        .returnEndDate=QDate(QDate::currentDate()),
+    };
+
+    combobox_borrowState->setCurrentIndex(0);
+    comboBox_bOrder->setCurrentIndex(0);
+    comboBox_borrowed->setCurrentIndex(0);
+    comboBox_userKind->setCurrentIndex(0);
+    orderColumn->setCurrentIndex(0);
+    orderWay->setCurrentIndex(0);
+
+    borrowDateStart->setDate(QDate(2024,5,1));
+    borrowDateEnd->setDate(QDate::currentDate());
+    returnDateStart->setDate(QDate(2024,5,1));
+    returnDateEnd->setDate(QDate::currentDate());
+}
+
 void rootWidget::setOptionWidget(){
-    
-}
-
-void rootWidget::receviceDB(QSqlDatabase db){
-    this->db = db;
-}
-
-void rootWidget::receviceRootUser(QString user){
-    this->rootUser=user;
-    tableNow=userNum;
-
-    ui->checkBox_user->setChecked(true);
-
-    //显示用户表与操作菜单
-    selectTable();
-    setOptionWidget();
-}
-
-void rootWidget::selectTable(){
-    model->clear();
-    model->setHorizontalHeaderLabels(tableHead[tableNow]);
-
     userOptionWidget->hide();
     bookOptionWidget->hide();
-
+    borrowOptionWidget->hide();
     grenreOptionWidget->hide();
     switch (tableNow)
     {
@@ -183,9 +294,35 @@ void rootWidget::selectTable(){
         bookOptionWidget->show();break;
     case grenreNum:
         grenreOptionWidget->show();break;
+    case borrowNum:
+        borrowOptionWidget->show();break;
     default:
         break;
     }
+}
+
+void rootWidget::receviceDB(QSqlDatabase db){
+    this->db = db;
+}
+
+void rootWidget::receviceRootUser(QString user){
+    this->rootUser=user;
+    ui->label_2->setText(QString("当前用户：%1").arg(user));
+    tableNow=userNum;
+    
+    initRoot();
+
+    if(ui->checkBox_user->isChecked())
+        selectTable();
+    else 
+        ui->checkBox_user->setChecked(true);
+}
+
+void rootWidget::selectTable(){
+    model->clear();
+    model->setHorizontalHeaderLabels(tableHead[tableNow]);
+
+    setOptionWidget();
 
     //用户表不显示密码
     QSqlQuery qry;
@@ -214,6 +351,9 @@ void rootWidget::selectTable(){
 void rootWidget::userSlot(bool b){
     if(!b)return;
     tableNow = userNum;
+    ui->lineEdit_search->clear();
+    ui->lineEdit_search_2->hide();
+    ui->label_search_2->hide();
     ui->label_search->setText("输入用户名查找:");
     selectTable();
 }
@@ -221,6 +361,9 @@ void rootWidget::userSlot(bool b){
 void rootWidget::borrowSlot(bool b){
     if(!b)return;
     tableNow = borrowNum;
+    ui->lineEdit_search->clear();
+    ui->lineEdit_search_2->show();
+    ui->label_search_2->show();
     ui->label_search->setText("输入用户名查找:");
     selectTable();
 }
@@ -228,6 +371,9 @@ void rootWidget::borrowSlot(bool b){
 void rootWidget::bookSlot(bool b){
     if(!b)return;
     tableNow = bookNum;
+    ui->lineEdit_search->clear();
+    ui->label_search_2->hide();
+    ui->lineEdit_search_2->hide();
     ui->label_search->setText("输入书名查找:");
     selectTable();
 }
@@ -235,6 +381,9 @@ void rootWidget::bookSlot(bool b){
 void rootWidget::grenreSlot(bool b){
     if(!b)return;
     tableNow = grenreNum;
+    ui->lineEdit_search->clear();
+    ui->label_search_2->hide();
+    ui->lineEdit_search_2->hide();
     ui->label_search->setText("输入类型查找:");
     selectTable();
 }
@@ -325,14 +474,13 @@ void rootWidget::comboBoxUserSlot(int index){
             break;
         default:break;
     }
-    selectTable();
 }
 
 void rootWidget::comboBoxBorrowSlot(int index){
     //qDebug()<<index;
     switch(index){
         case 0:
-            uOption.state=option::bothState;
+            uOption.state=option::allState;
             break;
         case 1:
             uOption.state=option::borrowed;
@@ -342,7 +490,6 @@ void rootWidget::comboBoxBorrowSlot(int index){
             break;
         default:break;
     }
-    selectTable();
 }
 
 void rootWidget::getCommand(){
@@ -356,6 +503,9 @@ void rootWidget::getCommand(){
             break;
         case grenreNum:
             getGrenreCommand();
+            break;
+        case borrowNum:
+            getBorrowCommand();
             break;
         default:
             break;
@@ -377,7 +527,7 @@ void rootWidget::getUserCommand(){
     }
     if(!command.isNull())command+=" and ";
     switch(uOption.state){
-        case option::bothState:
+        case option::allState:
             command=command.mid(0,command.length()-sizeof(" and ")); //删除and
             break;
         case option::borrowed:
@@ -397,6 +547,7 @@ void rootWidget::getUserCommand(){
 
 void rootWidget::getBookCommand(){
    command=QString(" bnumber>=%1 and bnumber<=%2").arg(bkOption.minCnt).arg(bkOption.maxCnt);
+   command+=QString(" order by bnumber %1 ").arg(bkOption.order==option::ASC?"ASC":"DESC");
    if(!ui->lineEdit_search->text().isEmpty())
         command+=QString(" and bname like '%1%'").arg(ui->lineEdit_search->text());
 }
@@ -450,4 +601,42 @@ void rootWidget::maxFloorSlot(){
         return;
     }
     gOption.maxFloor=max;
+}
+
+void rootWidget::getBorrowCommand(){
+    switch(boOption.state){
+        case option::allState:
+            command+=" (return_time is null or ";
+            command+=QString(" return_time>='%1' and return_time<='%2') ").arg(boOption.returnStartDate.toString("yyyy-MM-dd")).arg(boOption.returnEndDate.toString("yyyy-MM-dd"));
+            break;
+        case option::returned:
+            command+=" return_time is not null and ";
+            command+=QString(" return_time>='%1' and return_time<='%2' ").arg(boOption.returnStartDate.toString("yyyy-MM-dd")).arg(boOption.returnEndDate.toString("yyyy-MM-dd"));
+            break;
+        case option::NotReturned:
+            command+=" return_time is null";break;
+        default:break;
+    }
+    command+=" and ";
+    command+=QString(" borrow_time>='%1' and borrow_time<='%2' ").arg(boOption.borrowStartDate.toString("yyyy-MM-dd")).arg(boOption.borrowEndDate.toString("yyyy-MM-dd"));
+    
+    if(!ui->lineEdit_search->text().isEmpty())
+        command+=QString(" and name like '%1%'").arg(ui->lineEdit_search->text());
+    if(!ui->lineEdit_search_2->text().isEmpty())
+        command+=QString(" and bno like '%1%'").arg(ui->lineEdit_search_2->text());
+
+    //排序
+    switch(boOption.o_column){
+        case option::C_BORROW_TIME:
+            command+=" order by borrow_time ";break;
+        case option::C_RETURN_TIME:
+            command+=" order by return_time ";break;
+        case option::C_TIME_CNT:
+            command+=" order by time_cnt ";break;
+        case option::C_MONEY:
+            command+=" order by money ";break;
+        default:break;
+    }
+    command+=boOption.order==option::ASC?"ASC":"DESC";
+    command+=QString(" ,id %1").arg(boOption.order==option::ASC?"ASC":"DESC");
 }

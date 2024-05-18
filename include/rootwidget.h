@@ -9,6 +9,8 @@
 #include <QVector>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QComboBox>
+#include <QDateTimeEdit>
 #include "../include/option.h"
 
 namespace Ui {
@@ -50,6 +52,18 @@ private:
     Ui::rootWidget *ui;
     QSqlDatabase db;
     QString rootUser;
+
+    QComboBox *comboBox_userKind;
+    QComboBox *comboBox_borrowed;
+
+    QComboBox *comboBox_bOrder;
+    QComboBox *combobox_borrowState;
+    QComboBox *orderColumn;
+    QComboBox *orderWay;
+    QDateTimeEdit *borrowDateStart;
+    QDateTimeEdit *borrowDateEnd;
+    QDateTimeEdit *returnDateStart;
+    QDateTimeEdit *returnDateEnd;
     
     QStandardItemModel *model;
     QVector<QStringList>tableHead;
@@ -60,6 +74,7 @@ private:
     QWidget *userOptionWidget;  //user表的筛选条件窗口
     QWidget *bookOptionWidget;  //book表的筛选条件窗口
     QWidget *grenreOptionWidget;  //grenre表的筛选条件窗口
+    QWidget *borrowOptionWidget;  //borrow表的筛选条件窗口
 
     tableNum tableNow;
 
@@ -72,11 +87,15 @@ private:
     struct option::userOption uOption;  //记录user表查询筛选条件
     struct option::bookOption bkOption; //记录book表查询筛选条件
     struct option::grenreOption gOption;//记录grenre表查询筛选条件
+    struct option::borrowOption boOption;//记录borrow表查询筛选条件
     void getUserCommand();      //获取user表的筛选条件
     void getBookCommand();      //获取book表筛选条件
     void getGrenreCommand();    //获取grenre表筛选条件
+    void getBorrowCommand();    //获取borrow表筛选条件
 
     void getCommand();  //获取当前表的筛选条件
+
+    void initRoot();
 
     void selectTable();
     void setOptionWidget();
