@@ -72,22 +72,22 @@ rootWidget::rootWidget(QWidget *parent) :
     connect(lineEdit_minBNumer,&QLineEdit::textEdited,this,&rootWidget::minBnumberSlot);
     connect(lineEdit_maxBNumer,&QLineEdit::textEdited,this,&rootWidget::maxBnumberSlot);
 
-    //grenre表对应功能菜单
-    grenreOptionWidget = new QWidget(this);
-    grenreOptionWidget->setGeometry(1040,220,230,100);
-    QVBoxLayout *grenreLayout = new QVBoxLayout(grenreOptionWidget);
+    //genre表对应功能菜单
+    genreOptionWidget = new QWidget(this);
+    genreOptionWidget->setGeometry(1040,220,230,100);
+    QVBoxLayout *genreLayout = new QVBoxLayout(genreOptionWidget);
     QHBoxLayout *bookFloorLayout = new QHBoxLayout();
-    lineEdit_minFloor = new QLineEdit(grenreOptionWidget);
+    lineEdit_minFloor = new QLineEdit(genreOptionWidget);
     lineEdit_minFloor->setValidator(new QRegExpValidator(QRegExp("[1-4]{1}"))); //限制只能输入数字（1位）
     lineEdit_minFloor->setText("1");
-    lineEdit_maxFloor = new QLineEdit(grenreOptionWidget);
+    lineEdit_maxFloor = new QLineEdit(genreOptionWidget);
     lineEdit_maxFloor->setValidator(new QRegExpValidator(QRegExp("[1-4]{1}"))); //限制只能输入数字（1位）
     lineEdit_maxFloor->setText("4");
     bookFloorLayout->addWidget(lineEdit_minFloor);
     bookFloorLayout->addWidget(new QLabel("到"));
     bookFloorLayout->addWidget(lineEdit_maxFloor);
-    grenreLayout->addWidget(new QLabel("输入楼层范围(共4楼):"));
-    grenreLayout->addLayout(bookFloorLayout);
+    genreLayout->addWidget(new QLabel("输入楼层范围(共4楼):"));
+    genreLayout->addLayout(bookFloorLayout);
     connect(lineEdit_minFloor,&QLineEdit::textChanged,this,&rootWidget::minFloorSlot);
     connect(lineEdit_maxFloor,&QLineEdit::textChanged,this,&rootWidget::maxFloorSlot);
 
@@ -196,14 +196,14 @@ rootWidget::rootWidget(QWidget *parent) :
     QButtonGroup *group = new QButtonGroup(this);
     group->addButton(ui->checkBox_book);
     group->addButton(ui->checkBox_borrow);
-    group->addButton(ui->checkBox_grenre);
+    group->addButton(ui->checkBox_genre);
     group->addButton(ui->checkBox_user);
     ui->checkBox_user->setChecked(true);
 
     tableName.push_back("user");
     tableName.push_back("book");
     tableName.push_back("borrow");
-    tableName.push_back("grenre");
+    tableName.push_back("genre");
 
     QStringList list;
     list<<"用户名"<<"权限"<<"借书单号";
@@ -229,7 +229,7 @@ rootWidget::rootWidget(QWidget *parent) :
     connect(ui->checkBox_user,&QCheckBox::toggled,this,&rootWidget::userSlot);
     connect(ui->checkBox_book,&QCheckBox::toggled,this,&rootWidget::bookSlot);
     connect(ui->checkBox_borrow,&QCheckBox::toggled,this,&rootWidget::borrowSlot);
-    connect(ui->checkBox_grenre,&QCheckBox::toggled,this,&rootWidget::grenreSlot);
+    connect(ui->checkBox_genre,&QCheckBox::toggled,this,&rootWidget::genreSlot);
     //刷新
     connect(ui->pushButton_re,&QPushButton::clicked,this,&rootWidget::selectTable);
     //注册用户
@@ -285,15 +285,15 @@ void rootWidget::setOptionWidget(){
     userOptionWidget->hide();
     bookOptionWidget->hide();
     borrowOptionWidget->hide();
-    grenreOptionWidget->hide();
+    genreOptionWidget->hide();
     switch (tableNow)
     {
     case userNum:
         userOptionWidget->show();break;
     case bookNum:
         bookOptionWidget->show();break;
-    case grenreNum:
-        grenreOptionWidget->show();break;
+    case genreNum:
+        genreOptionWidget->show();break;
     case borrowNum:
         borrowOptionWidget->show();break;
     default:
@@ -378,9 +378,9 @@ void rootWidget::bookSlot(bool b){
     selectTable();
 }
 
-void rootWidget::grenreSlot(bool b){
+void rootWidget::genreSlot(bool b){
     if(!b)return;
-    tableNow = grenreNum;
+    tableNow = genreNum;
     ui->lineEdit_search->clear();
     ui->label_search_2->hide();
     ui->lineEdit_search_2->hide();
@@ -501,8 +501,8 @@ void rootWidget::getCommand(){
         case bookNum:
             getBookCommand();
             break;
-        case grenreNum:
-            getGrenreCommand();
+        case genreNum:
+            getgenreCommand();
             break;
         case borrowNum:
             getBorrowCommand();
@@ -575,7 +575,7 @@ void rootWidget::maxBnumberSlot(){
     bkOption.maxCnt=max;
 }
 
-void rootWidget::getGrenreCommand(){
+void rootWidget::getgenreCommand(){
     command=QString(" floor>=%1 and floor<=%2 ").arg(gOption.minFloor).arg(gOption.maxFloor);
     if(!ui->lineEdit_search->text().isEmpty())
         command+=QString(" and type like '%1%'").arg(ui->lineEdit_search->text());

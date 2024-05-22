@@ -97,9 +97,9 @@
      </widget>
     </item>
     <item>
-     <widget class="QCheckBox" name="checkBox_grenre">
+     <widget class="QCheckBox" name="checkBox_genre">
       <property name="text">
-       <string>Grenre</string>
+       <string>Genre</string>
       </property>
      </widget>
     </item>

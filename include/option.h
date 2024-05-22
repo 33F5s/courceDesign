@@ -18,7 +18,7 @@ namespace option{
         orderBy order;
     };
 
-    struct grenreOption{
+    struct genreOption{
         int minFloor;
         int maxFloor;
     };

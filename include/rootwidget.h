@@ -17,7 +17,7 @@ namespace Ui {
 class rootWidget;
 }
 
-typedef enum {userNum=0,bookNum,borrowNum,grenreNum}tableNum;
+typedef enum {userNum=0,bookNum,borrowNum,genreNum}tableNum;
 
 class rootWidget : public QWidget
 {
@@ -33,7 +33,7 @@ private slots:
     void userSlot(bool b);
     void borrowSlot(bool b);
     void bookSlot(bool b);
-    void grenreSlot(bool b);
+    void genreSlot(bool b);
 
     void subSlot();
     void cPasswdSlot();
@@ -43,8 +43,8 @@ private slots:
     void minBnumberSlot();  //书的最少数量
     void maxBnumberSlot();  //最多数量
 
-    void minFloorSlot();    //最低楼层（grenre）
-    void maxFloorSlot();    //最高楼层（grenre）
+    void minFloorSlot();    //最低楼层（genre）
+    void maxFloorSlot();    //最高楼层（genre）
 
 signals:
     void backHome();
@@ -73,7 +73,7 @@ private:
 
     QWidget *userOptionWidget;  //user表的筛选条件窗口
     QWidget *bookOptionWidget;  //book表的筛选条件窗口
-    QWidget *grenreOptionWidget;  //grenre表的筛选条件窗口
+    QWidget *genreOptionWidget;  //genre表的筛选条件窗口
     QWidget *borrowOptionWidget;  //borrow表的筛选条件窗口
 
     tableNum tableNow;
@@ -81,16 +81,16 @@ private:
     QLineEdit *lineEdit_minBNumer;  //book的数量的最小和最大值输入框
     QLineEdit *lineEdit_maxBNumer;
 
-    QLineEdit *lineEdit_minFloor;  //grenre楼层
+    QLineEdit *lineEdit_minFloor;  //genre楼层
     QLineEdit *lineEdit_maxFloor;
 
     struct option::userOption uOption;  //记录user表查询筛选条件
     struct option::bookOption bkOption; //记录book表查询筛选条件
-    struct option::grenreOption gOption;//记录grenre表查询筛选条件
+    struct option::genreOption gOption;//记录genre表查询筛选条件
     struct option::borrowOption boOption;//记录borrow表查询筛选条件
     void getUserCommand();      //获取user表的筛选条件
     void getBookCommand();      //获取book表筛选条件
-    void getGrenreCommand();    //获取grenre表筛选条件
+    void getgenreCommand();    //获取genre表筛选条件
     void getBorrowCommand();    //获取borrow表筛选条件
 
     void getCommand();  //获取当前表的筛选条件

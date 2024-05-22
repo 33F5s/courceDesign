@@ -76,11 +76,11 @@ void userWidget::borrowShowSlot(){
 void userWidget::searchSlot(const QString &str){
     QSqlQuery qry;
     QString command;
-    //搜索书籍（内连接book和grenre表）
+    //搜索书籍（内连接book和genre表）
     if(str.size()==0)
-        command="select bno,bname,bauthor,bhouse,bnumber,book.kind,type,floor from book,grenre where book.kind=grenre.kind";
+        command="select bno,bname,bauthor,bhouse,bnumber,book.kind,type,floor from book,genre where book.kind=genre.kind";
     else
-        command=QString("select bno,bname,bauthor,bhouse,bnumber,book.kind,type,floor from book,grenre where book.kind=grenre.kind and (bname like '%1%' or bno like '%1%' or bauthor like '%1%')").arg(str);
+        command=QString("select bno,bname,bauthor,bhouse,bnumber,book.kind,type,floor from book,genre where book.kind=genre.kind and (bname like '%1%' or bno like '%1%' or bauthor like '%1%')").arg(str);
     if(!qry.exec(command)){
         qDebug()<<"query wrong";
         return;
