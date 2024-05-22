@@ -87,9 +87,12 @@ void Widget::subSlot(){
         QString admin = dialog.admin();
         QString passwd = dialog.passwd();
         QSqlQuery qry;
-        if(!qry.exec(QString("insert into user values ('%1','%2',0)").arg(admin).arg(passwd))){
+        if(!qry.exec(QString("insert into user(name,passwd,permission) values ('%1','%2',0)").arg(admin).arg(passwd))){
             QMessageBox::warning(this,"警告","账户名已存在");
+            return;
         }
+        QMessageBox::information(this,"提示","注册成功");
+        //qDebug()<<QString("insert into user values ('%1','%2',0)").arg(admin).arg(passwd);
     }
 }
 

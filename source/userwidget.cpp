@@ -252,7 +252,10 @@ void userWidget::cPassWdSlot(){
     QSqlQuery qry;
     if(qry.exec(QString("update user set passwd='%1' where name='%2'").arg(passwd).arg(user))){
         QMessageBox::information(this,"提示","修改成功");
+        return;
     }
+    //qDebug()<<QString("update user set passwd='%1' where name='%2'").arg(passwd).arg(user);
+    QMessageBox::information(this,"提示","修改失败");
 }
 
 void userWidget::backSlot(){
