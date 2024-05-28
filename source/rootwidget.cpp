@@ -19,6 +19,9 @@ rootWidget::rootWidget(QWidget *parent) :
     ui->label_search->setText("输入用户名查找:");
     ui->label_search_2->setText("输入书编号查找");
 
+    ui->pushButton_delete->hide();
+    ui->pushButton_insert->hide();
+
     //user表对应功能菜单
     userOptionWidget = new QWidget(this);
     userOptionWidget->setGeometry(1040,220,200,150);
@@ -236,6 +239,55 @@ rootWidget::rootWidget(QWidget *parent) :
     connect(ui->pushButton_sub,&QPushButton::clicked,this,&rootWidget::subSlot);
     //重置用户密码
     connect(ui->pushButton_cPasswd,&QPushButton::clicked,this,&rootWidget::cPasswdSlot);
+
+    //添加条目
+    connect(ui->pushButton_insert,&QPushButton::clicked,[&]{
+        if(tableNow==userNum || tableNow==borrowNum)return;
+        myDialog dialog(tableNow,0,this);
+        if(dialog.exec()==QDialog::Accepted){
+            selectTable();
+        }
+    });
+    //修改条目
+    connect(ui->tableView,&QTableView::doubleClicked,[&](const QModelIndex &index){
+        if(tableNow==userNum || tableNow==borrowNum)return;
+        //qDebug()<<index.row();
+        QStringList list;
+        for(int i = 0;i<model->columnCount();i++){
+            list.append(model->data(model->index(index.row(),i)).toString());
+        }
+        myDialog dialog(tableNow,1,this,list);
+        if(dialog.exec()==QDialog::Accepted){
+            selectTable();
+        }
+    });
+    //删除条目
+    connect(ui->pushButton_delete,&QPushButton::clicked,[&]{
+        if(tableNow==userNum)return;
+        QStringList tableName,tablePK;
+        tableName<<"user"<<"book"<<"borrow"<<"genre";
+        tablePK<<"name"<<"bno"<<"id"<<"kind";
+        QModelIndexList list = ui->tableView->selectionModel()->selectedRows();
+        if(list.isEmpty()){
+            QMessageBox::information(this,"提示","请先选中");
+            return;
+        }
+        QSqlQuery qry;
+        qry.prepare(QString("delete from %1 where %2=:pk").arg(tableName[tableNow]).arg(tablePK[tableNow]));
+        foreach(const QModelIndex &index,list){
+            qry.bindValue(":pk",model->data(model->index(index.row(),0)).toString());
+            if(!qry.exec()){
+                qDebug()<<qry.lastError().text();
+                if(tableNow==borrowNum || tableNow==bookNum)
+                    QMessageBox::warning(this,"警告","删除出错,请检查书籍是否有未归还记录");
+                else
+                    QMessageBox::warning(this,"警告","删除出错");
+                return;
+            }
+        }
+        QMessageBox::information(this,"提示","删除成功");
+        selectTable();
+    });
 }
 
 rootWidget::~rootWidget()
@@ -351,6 +403,8 @@ void rootWidget::selectTable(){
 void rootWidget::userSlot(bool b){
     if(!b)return;
     tableNow = userNum;
+    ui->pushButton_delete->hide();
+    ui->pushButton_insert->hide();
     ui->lineEdit_search->clear();
     ui->lineEdit_search_2->hide();
     ui->label_search_2->hide();
@@ -361,6 +415,8 @@ void rootWidget::userSlot(bool b){
 void rootWidget::borrowSlot(bool b){
     if(!b)return;
     tableNow = borrowNum;
+    ui->pushButton_delete->show();
+    ui->pushButton_insert->hide();
     ui->lineEdit_search->clear();
     ui->lineEdit_search_2->show();
     ui->label_search_2->show();
@@ -371,6 +427,8 @@ void rootWidget::borrowSlot(bool b){
 void rootWidget::bookSlot(bool b){
     if(!b)return;
     tableNow = bookNum;
+    ui->pushButton_delete->show();
+    ui->pushButton_insert->show();
     ui->lineEdit_search->clear();
     ui->label_search_2->hide();
     ui->lineEdit_search_2->hide();
@@ -381,6 +439,8 @@ void rootWidget::bookSlot(bool b){
 void rootWidget::genreSlot(bool b){
     if(!b)return;
     tableNow = genreNum;
+    ui->pushButton_delete->show();
+    ui->pushButton_insert->show();
     ui->lineEdit_search->clear();
     ui->label_search_2->hide();
     ui->lineEdit_search_2->hide();
@@ -579,6 +639,7 @@ void rootWidget::getgenreCommand(){
     command=QString(" floor>=%1 and floor<=%2 ").arg(gOption.minFloor).arg(gOption.maxFloor);
     if(!ui->lineEdit_search->text().isEmpty())
         command+=QString(" and type like '%1%'").arg(ui->lineEdit_search->text());
+    command+=" order by floor ";
 }
 
 void rootWidget::minFloorSlot(){

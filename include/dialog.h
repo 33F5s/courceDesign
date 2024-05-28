@@ -1,7 +1,7 @@
 #ifndef DIALOG_H
 #define DIALOG_H
 
-#include <QMainWindow>
+#include <QWidget>
 #include <QDialog>
 #include <QLineEdit>
 #include <QDialogButtonBox>

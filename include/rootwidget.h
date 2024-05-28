@@ -12,12 +12,11 @@
 #include <QComboBox>
 #include <QDateTimeEdit>
 #include "../include/option.h"
+#include "../include/mydialog.h"
 
 namespace Ui {
 class rootWidget;
 }
-
-typedef enum {userNum=0,bookNum,borrowNum,genreNum}tableNum;
 
 class rootWidget : public QWidget
 {
@@ -26,6 +25,7 @@ class rootWidget : public QWidget
 public:
     explicit rootWidget(QWidget *parent = nullptr);
     ~rootWidget();
+
 public slots:
     void receviceDB(QSqlDatabase db);
     void receviceRootUser(QString user);
