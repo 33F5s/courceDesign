@@ -7,20 +7,24 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 
+typedef enum {Login=0,Register,ChangePassword,DeleteUser}userAction;
+
 class Dialog : public QDialog
 {
     Q_OBJECT
 public:
-    Dialog(int type=0,QWidget *parent = nullptr);
+    Dialog(userAction ua,QWidget *parent = nullptr,int permi=0);
     QString admin();
     QString passwd();
-    bool confirmPasswd();
+    int getPermission();
     void setAdmin(const QString &admin);
     void setNoEditedAdmin();
 
 private slots:
 
 private:
+    userAction ua;
+    int permission;
     QPushButton *m_adminButton;
     QLineEdit *m_adminLineEdit;
     QPushButton *m_passwdButton;
@@ -28,6 +32,11 @@ private:
     QPushButton *m_confirmButton;
     QLineEdit *m_confirmLineEdit;
     QDialogButtonBox *m_buttonBox;
+
+    void LoginSlot();
+    void RegisterSlot();
+    void ChangePasswordSlot();
+    void DeleteUserSlot();
 };
 
 #endif // DIALOG_H

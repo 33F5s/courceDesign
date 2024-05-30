@@ -28,7 +28,7 @@ public:
 
 public slots:
     void receviceDB(QSqlDatabase db);
-    void receviceRootUser(QString user);
+    void receviceRootUser(QString user,int permission);
 private slots:
     void userSlot(bool b);
     void borrowSlot(bool b);
@@ -37,6 +37,9 @@ private slots:
 
     void subSlot();
     void cPasswdSlot();
+    void delUser(); //注销用户槽函数
+    void returnBookSlot();
+
     void comboBoxUserSlot(int index);   //用户类型筛选
     void comboBoxBorrowSlot(int index); //借与未借书筛选
 
@@ -52,6 +55,7 @@ private:
     Ui::rootWidget *ui;
     QSqlDatabase db;
     QString rootUser;
+    int userPermission;
 
     QComboBox *comboBox_userKind;
     QComboBox *comboBox_borrowed;

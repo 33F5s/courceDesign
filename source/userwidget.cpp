@@ -167,7 +167,7 @@ void userWidget::returnSlot(){
     qry.next();
     
     if(!qry.isValid()){
-        QMessageBox::warning(this,"警告","当前无需还书");
+        QMessageBox::information(this,"提示","当前无需还书");
         return;
     }
     else if(qry.value(1).toInt()>0){
@@ -202,60 +202,20 @@ void userWidget::returnSlot(){
 
 //注销账号
 void userWidget::deleteSlot(){
-    bool ok;
-    QSqlQuery qry;
-    //查询未还的书
-    qry.exec(QString("select * from user where name='%1' and borrowBook is not null").arg(user));
-    qry.next();
-    if(qry.isValid()){
-        QMessageBox::information(this,"注意","请先归还书籍");
-        return ;
-    }
-
-    QString passwd = QInputDialog::getText(this,"注销不可找回","输入密码注销",QLineEdit::Password,"",&ok);
-    if(ok){
-        //判断密码是否正确
-        qry.exec(QString("select name from user where name='%1' and passwd='%2'").arg(user).arg(passwd));
-        qry.next();
-        if(!qry.isValid()){
-            QMessageBox::warning(this,"警告","密码错误");
-            return ;
-        }
-        //先删除借书记录（外码）
-        if(!qry.exec(QString("delete from borrow where name='%1'").arg(user))){
-            qDebug()<<"删除记录错误";
-            return;
-        }
-        //删除user
-        if(!qry.exec(QString("delete from user where name='%1'").arg(user))){
-            qDebug()<<"删除user错误";
-            return;
-        }
-
-        backSlot();
-        QMessageBox::information(this,"提示","账号已注销");
+    Dialog dialog(DeleteUser,this,2);
+    dialog.setAdmin(user);
+    dialog.setNoEditedAdmin();
+    if(dialog.exec()==QDialog::Accepted){
+        emit backHome();
     }
 }
 
 //修改密码槽函数
 void userWidget::cPassWdSlot(){
-    Dialog dialog(1,this);
-    dialog.setWindowTitle("修改密码");
+    Dialog dialog(ChangePassword,this,2);   //修改自己密码，赋予最高权限
     dialog.setAdmin(user);
     dialog.setNoEditedAdmin();
-    if(dialog.exec()!=QDialog::Accepted)return;
-    if(!dialog.confirmPasswd()){
-        QMessageBox::information(this,"提示","两次密码不一致");
-        return;
-    }
-    QString passwd = dialog.passwd();
-    QSqlQuery qry;
-    if(qry.exec(QString("update user set passwd='%1' where name='%2'").arg(passwd).arg(user))){
-        QMessageBox::information(this,"提示","修改成功");
-        return;
-    }
-    //qDebug()<<QString("update user set passwd='%1' where name='%2'").arg(passwd).arg(user);
-    QMessageBox::information(this,"提示","修改失败");
+    dialog.exec();
 }
 
 void userWidget::backSlot(){

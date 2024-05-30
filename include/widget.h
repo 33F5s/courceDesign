@@ -22,7 +22,7 @@ public:
 signals:
     void sendDB(QSqlDatabase db);
     void sendUser(QString name);
-    void sendRootUser(QString name);
+    void sendRootUser(QString name,int permission);
 private slots:
     void userSlot();
     void rootSlot();

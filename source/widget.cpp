@@ -77,64 +77,24 @@ Widget::~Widget()
 
 //注册 槽函数
 void Widget::subSlot(){
-    Dialog dialog(1,this);
-    if(dialog.exec() == Dialog::Accepted){
-        bool confirm = dialog.confirmPasswd();
-        if(!confirm){
-            QMessageBox::warning(this,"警告","两次密码不一致");
-            return ;
-        }
-        QString admin = dialog.admin();
-        QString passwd = dialog.passwd();
-        QSqlQuery qry;
-        if(!qry.exec(QString("insert into user(name,passwd,permission) values ('%1','%2',0)").arg(admin).arg(passwd))){
-            QMessageBox::warning(this,"警告","账户名已存在");
-            return;
-        }
-        QMessageBox::information(this,"提示","注册成功");
-        //qDebug()<<QString("insert into user values ('%1','%2',0)").arg(admin).arg(passwd);
-    }
+    Dialog dialog(Register,this);
+    dialog.exec();
 }
 
 void Widget::userSlot(){
-    Dialog dialog(0,this);
+    Dialog dialog(Login,this);
     if (dialog.exec() == QDialog::Accepted) {
-        QString admin = dialog.admin();
-        QString passwd = dialog.passwd();
-        if(admin.size()==0 || passwd.size()==0){
-            QMessageBox::warning(this,"警告","用户名或密码为空");
-            return;
-        }
-        QSqlQuery qry;
-        qry.exec(QString("select permission from user where name='%1' and passwd='%2';").arg(admin).arg(passwd));
-        if(qry.next()){
-            ui->stackedWidget->setCurrentIndex(userPageNum);
-            emit sendUser(admin);
-            this->resize(1280,720);
-        }
-        else{
-            QMessageBox::warning(this,"登录错误","请检查用户名与密码或进行注册");
-        }
+        ui->stackedWidget->setCurrentIndex(userPageNum);
+        emit sendUser(dialog.admin());
+        this->resize(1280,720);
     }
 }
 
 void Widget::rootSlot(){
-    Dialog dialog(0,this);
+    Dialog dialog(Login,this);
     if (dialog.exec() == QDialog::Accepted) {
-        QString admin = dialog.admin();
-        QString passwd = dialog.passwd();
-        QSqlQuery qry;
-        // qry.exec(QString("select permission from user where name='%1' and passwd='%2';").arg(admin).arg(passwd));
-        // if(qry.next()){
-        //     if(qry.value(0).toInt()<1)
-        //         QMessageBox::warning(this,"权限错误","该用户无管理员权限");
-        //     else
-                ui->stackedWidget->setCurrentIndex(rootPageNum);
-                emit sendRootUser(admin);
-                this->resize(1280,720);
-        // }
-        // else{
-        //     QMessageBox::warning(this,"登录错误","请检查用户名与密码");
-        // }
+        ui->stackedWidget->setCurrentIndex(rootPageNum);
+        emit sendRootUser(dialog.admin(),dialog.getPermission());
+        this->resize(1280,720);
     }
 }

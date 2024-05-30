@@ -239,6 +239,10 @@ rootWidget::rootWidget(QWidget *parent) :
     connect(ui->pushButton_sub,&QPushButton::clicked,this,&rootWidget::subSlot);
     //重置用户密码
     connect(ui->pushButton_cPasswd,&QPushButton::clicked,this,&rootWidget::cPasswdSlot);
+    //注销用户
+    connect(ui->pushButton_delUser,&QPushButton::clicked,this,&rootWidget::delUser);
+    //还书
+    connect(ui->pushButton_return,&QPushButton::clicked,this,&rootWidget::returnBookSlot);
 
     //添加条目
     connect(ui->pushButton_insert,&QPushButton::clicked,[&]{
@@ -357,8 +361,9 @@ void rootWidget::receviceDB(QSqlDatabase db){
     this->db = db;
 }
 
-void rootWidget::receviceRootUser(QString user){
+void rootWidget::receviceRootUser(QString user,int permission){
     this->rootUser=user;
+    this->userPermission=permission;
     ui->label_2->setText(QString("当前用户：%1").arg(user));
     tableNow=userNum;
     
@@ -464,59 +469,47 @@ void rootWidget::subSlot(){
         permission=0;
     }
 
-    Dialog dialog (1,this);
-    if(dialog.exec()!=QDialog::Accepted)return;
-    if(!dialog.confirmPasswd()){
-        QMessageBox::warning(this,"警告","两次密码不一致");
-        return;
-    }
-    
-    QString admin = dialog.admin();
-    QString passwd = dialog.passwd();
-    if(admin.size()==0 || passwd.size()==0){
-        QMessageBox::warning(this,"警告","用户名或密码为空");
-        return;
-    }
-    QSqlQuery qry;
-    if(qry.exec(QString("insert into user (name,passwd,permission) values ('%1','%2',%3)").arg(admin).arg(passwd).arg(permission))){
-        QMessageBox::information(this,"提示","注册成功");
-    }
-    else{
-        QMessageBox::information(this,"提示","注册失败（账号名重复）");
-    }
-    
+    Dialog dialog (Register,this,permission);
+    dialog.exec();
 }
 //重置用户密码
 void rootWidget::cPasswdSlot(){
-    Dialog dialog(1,this);
-    dialog.setWindowTitle("重置密码");
-    if(dialog.exec()!=QDialog::Accepted)return;
-    if(!dialog.confirmPasswd()){
-        QMessageBox::warning(this,"警告","两次密码不一致");
-        return;
+    QMessageBox msg(this);
+    msg.setText("请选择需重置密码账户");
+    QPushButton *b1 = msg.addButton("取消",QMessageBox::RejectRole);
+    QPushButton *b2 = msg.addButton("其他用户",QMessageBox::ButtonRole::ActionRole);
+    QPushButton *b3 = msg.addButton("当前用户",QMessageBox::ButtonRole::ActionRole);
+    msg.exec();
+    if(msg.clickedButton()==b3){//当前用户,赋予最高权限修改密码
+        Dialog dialog(ChangePassword,this,2);
+        dialog.setAdmin(rootUser);
+        dialog.setNoEditedAdmin();
+        dialog.exec();
     }
-    QString admin = dialog.admin();
-    QString passwd = dialog.passwd();
-    if(admin.size()==0 || passwd.size()==0){
-        QMessageBox::warning(this,"警告","用户名或密码为空");
-        return;
+    else if(msg.clickedButton()==b2){
+        Dialog dialog(ChangePassword,this,userPermission);
+        dialog.exec();
     }
-    QSqlQuery qry;
-    qry.exec(QString("select name,permission from user where name='%1'").arg(admin));
-    qry.next();
-    if(!qry.isValid()){
-        QMessageBox::information(this,"提示","无该账号");
-        return;
+}
+//注销用户
+void rootWidget::delUser(){
+    QMessageBox msg(this);
+    msg.setText("请选择需注销账户");
+    QPushButton *b1 = msg.addButton("取消",QMessageBox::RejectRole);
+    QPushButton *b2 = msg.addButton("其他用户",QMessageBox::ButtonRole::ActionRole);
+    QPushButton *b3 = msg.addButton("当前用户",QMessageBox::ButtonRole::ActionRole);
+    msg.exec();
+    if(msg.clickedButton()==b3){//当前用户,赋予最高权限
+        Dialog dialog(DeleteUser,this,2);
+        dialog.setAdmin(rootUser);
+        dialog.setNoEditedAdmin();
+        if(dialog.exec()==QDialog::Accepted){
+            emit backHome();
+        }
     }
-    if(qry.value(0).toString()!=rootUser && qry.value(1).toInt()>0){
-        QMessageBox::warning(this,"警告","该账号为其他管理员账号,不可更改");
-        return;
-    }
-    if(qry.exec(QString("update user set passwd='%1' where name='%2'").arg(passwd).arg(admin))){
-        QMessageBox::information(this,"提示","重置成功");
-    }
-    else{
-        QMessageBox::information(this,"提示","重置失败");
+    else if(msg.clickedButton()==b2){
+        Dialog dialog(DeleteUser,this,userPermission);
+        dialog.exec();
     }
 }
 
@@ -700,4 +693,62 @@ void rootWidget::getBorrowCommand(){
     }
     command+=boOption.order==option::ASC?"ASC":"DESC";
     command+=QString(" ,id %1").arg(boOption.order==option::ASC?"ASC":"DESC");
+}
+
+void rootWidget::returnBookSlot(){
+    QSqlQuery qry;
+    QString bno;
+    //查询未还书，以及所需交的罚款
+    bool ok;
+    QString user = QInputDialog::getText(this,"还书","输入需还书账户",QLineEdit::Normal,"",&ok);
+    if(!ok)return;
+    qry.prepare("select name,borrowBook from user where name=:name");
+    qry.bindValue(":name",user);
+    if(!qry.exec()){
+        QMessageBox::warning(this,"警告","查询错误");
+        return;
+    }
+    qry.next();
+    if(!qry.isValid()){
+        QMessageBox::information(this,"提示","未查询到该账户");
+        return;
+    }
+    bno=qry.value(1).toString();
+    
+    if(bno.isEmpty()){
+        QMessageBox::information(this,"提示","该账户当前无需还书");
+        return;
+    }
+    qry.prepare("select money from borrow where id=:id");
+    qry.bindValue(":id",bno);
+    if(!qry.exec() || !qry.next()){
+        QMessageBox::warning(this,"警告","查询错误");
+        return;
+    }
+    if(qry.value(0).toInt()>0){
+        QMessageBox::warning(this,"警告","还书超时 需交罚款");
+        QStringList item;
+        bool ok;
+        item<<"微信"<<"支付宝";
+        QString str = QInputDialog::getItem(this,"付款","请选择付款方式",item,0,true,&ok);
+        if(ok){
+            QMessageBox::information(this,"付款信息","付款成功");
+            // if(str==item[0]){
+
+            // }
+            // else if(str==str[1]){
+
+            // }
+        }
+        else 
+            return;
+    }
+
+    QDateTime current_time = QDateTime::currentDateTime();
+    //更新还书时间，还完书后数量，user借书数量（MySql触发器实现）此处只需更新borrow表
+    qry.exec(QString("select borrowBook from user where name='%1' and borrowBook is not null").arg(user));
+    qry.next();
+    QString id=qry.value(0).toString();
+    if(qry.exec(QString("update borrow set return_time='%1' where id=%2").arg(current_time.toString("yyyy-MM-dd")).arg(id)))
+        QMessageBox::information(this,"提示","还书成功");
 }

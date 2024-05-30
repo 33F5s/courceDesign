@@ -10,11 +10,13 @@
 myDialog::myDialog(tableNum table,int model,QWidget *parent,const QStringList &list_contents)
     :QDialog(parent)
 {   
+    setWindowTitle("数据更新");
     tableNow = table;
     this->model=model;
     this->list_contents=list_contents;
     if(!list_contents.isEmpty() && model==1)pk=list_contents[0];
     QPushButton *buttonOk = new QPushButton("确认",this);
+    buttonOk->setFocus();
     QPushButton *buttonCancle = new QPushButton("取消",this);
     QHBoxLayout *button_layout = new QHBoxLayout();
     button_layout->addWidget(buttonCancle);
