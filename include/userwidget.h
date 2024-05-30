@@ -24,7 +24,6 @@ public slots:
     void receviceDB(QSqlDatabase db);
     void receviceUser(QString user);
 private slots:
-    void borrowShowSlot();
     void searchSlot(const QString &str);
     void borrowDoubleClickedSlot(const QModelIndex &index);
     void reSlot();

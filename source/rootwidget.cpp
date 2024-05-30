@@ -22,6 +22,8 @@ rootWidget::rootWidget(QWidget *parent) :
     ui->pushButton_delete->hide();
     ui->pushButton_insert->hide();
 
+    ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView->verticalHeader()->setMinimumSectionSize(35);
     //user表对应功能菜单
     userOptionWidget = new QWidget(this);
     userOptionWidget->setGeometry(1040,220,200,150);

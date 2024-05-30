@@ -12,9 +12,6 @@ userWidget::userWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->borrowWidget->hide();
-
-    ui->pushButton_borrow->setText("借书");
     ui->pushButton_home->setText("退出");
     ui->pushButton_re->setText("刷新");
     ui->pushButton_return->setText("还书");
@@ -23,6 +20,8 @@ userWidget::userWidget(QWidget *parent) :
     ui->pushButton_cPassWd->setText("修改密码");
 
     //tableView borrow 部分
+    ui->tableView_borrow->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView_borrow->verticalHeader()->setMinimumSectionSize(35);
     ui->label_bookName->setText("请输入借书的书名/编号/作者");
     borrow_model = new QStandardItemModel(this);
     ui->tableView_borrow->setModel(borrow_model);
@@ -30,13 +29,14 @@ userWidget::userWidget(QWidget *parent) :
     borrow_model->setHorizontalHeaderLabels(borrow_headList);
 
     //table view return 部分
+    ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView->verticalHeader()->setMinimumSectionSize(35);
     ui->label->setText("当前所借书");
     return_model = new QStandardItemModel(this);
     ui->tableView->setModel(return_model);
     return_headList<<"账户"<<"书编号"<<"书名"<<"借出时间"<<"已借天数"<<"还书时间"<<"欠费";
     return_model->setHorizontalHeaderLabels(return_headList);
 
-    connect(ui->pushButton_borrow,&QPushButton::clicked,this,&userWidget::borrowShowSlot);
     connect(ui->pushButton_home,&QPushButton::clicked,this,&userWidget::backSlot);
     connect(ui->pushButton_search,&QPushButton::clicked,[&]{
         searchSlot(ui->lineEdit_bookName->text());
@@ -55,21 +55,6 @@ userWidget::userWidget(QWidget *parent) :
 userWidget::~userWidget()
 {
     delete ui;
-}
-
-void userWidget::borrowShowSlot(){
-    if(!ui->borrowWidget->isHidden())return;
-    //列出有的书
-    searchSlot("");
-    QSqlQuery qry;
-    //查询未还书
-    qry.exec(QString("select borrowBook from user where name='%1' and borrowBook is not null").arg(user));
-    qry.next();
-    if(qry.isValid()){
-        QMessageBox::warning(this,"警告","当前有书未还");
-        return;
-    }
-    ui->borrowWidget->show();
 }
 
 //查询书籍
@@ -105,6 +90,8 @@ void userWidget::receviceDB(QSqlDatabase db){
 void userWidget::receviceUser(QString user){
     this->user=user;
     ui->label_name->setText(QString("当前用户：%1").arg(user));
+    ui->lineEdit_bookName->setText("");
+    searchSlot("");//查询所有书籍
     //查询未还的书
     reSlot();
 }
@@ -113,15 +100,9 @@ void userWidget::receviceUser(QString user){
 void userWidget::borrowDoubleClickedSlot(const QModelIndex &index){
     QString bookCode = borrow_model->index(index.row(),0).data().toString();
     QSqlQuery qry;
-    //借书，尝试更新表（bnumber>=0），更新失败表示数量不足 改由触发器实现
-    // if(!qry.exec(QString("update book set bnumber=bnumber-1 where bno='%1'").arg(bookCode))){
-    //     QMessageBox::warning(this,"错误","数量不足");
-    //     searchSlot(ui->lineEdit_bookName->text());
-    //     return;
-    // }
 
     //重新查询 更新TableView
-    searchSlot(ui->lineEdit_bookName->text());
+    //searchSlot(ui->lineEdit_bookName->text());
 
     QDateTime current_time = QDateTime::currentDateTime();
     //qDebug()<<current_time.toString("yyyy-MM-dd");
@@ -131,6 +112,14 @@ void userWidget::borrowDoubleClickedSlot(const QModelIndex &index){
                     .arg(bookCode)
                     .arg(current_time.toString("yyyy-MM-dd")));
     if(!ok){
+        qry.prepare("select borrowBook from user where name=:name");
+        qry.bindValue(":name",user);
+        qry.exec();
+        qry.next();
+        if(qry.isValid()){
+            QMessageBox::warning(this,"错误","请先归还书籍");
+            return;
+        }
         QMessageBox::warning(this,"错误","数量不足");
         searchSlot(ui->lineEdit_bookName->text());
         return;
@@ -141,7 +130,7 @@ void userWidget::borrowDoubleClickedSlot(const QModelIndex &index){
     //刷新显示借书记录表
     reSlot();
     QMessageBox::information(this,"提示","借书成功");
-    ui->borrowWidget->hide();
+    searchSlot(ui->lineEdit_bookName->text());
 }
 
 //显示当前用户所借书
@@ -198,6 +187,7 @@ void userWidget::returnSlot(){
     if(qry.exec(QString("update borrow set return_time='%1' where id=%2").arg(current_time.toString("yyyy-MM-dd")).arg(id)))
         QMessageBox::information(this,"提示","还书成功");
     reSlot();
+    searchSlot(ui->lineEdit_bookName->text());
 }
 
 //注销账号
@@ -220,5 +210,4 @@ void userWidget::cPassWdSlot(){
 
 void userWidget::backSlot(){
     emit backHome();
-    ui->borrowWidget->hide();
 }

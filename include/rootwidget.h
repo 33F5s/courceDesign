@@ -11,6 +11,7 @@
 #include <QWidget>
 #include <QComboBox>
 #include <QDateTimeEdit>
+#include <QMouseEvent>
 #include "../include/option.h"
 #include "../include/mydialog.h"
 

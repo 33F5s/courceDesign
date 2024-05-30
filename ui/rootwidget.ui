@@ -38,6 +38,15 @@
    <property name="editTriggers">
     <set>QAbstractItemView::NoEditTriggers</set>
    </property>
+   <property name="verticalScrollMode">
+    <enum>QAbstractItemView::ScrollPerPixel</enum>
+   </property>
+   <property name="horizontalScrollMode">
+    <enum>QAbstractItemView::ScrollPerPixel</enum>
+   </property>
+   <attribute name="verticalHeaderMinimumSectionSize">
+    <number>30</number>
+   </attribute>
   </widget>
   <widget class="QPushButton" name="pushButton_re">
    <property name="geometry">
@@ -190,7 +199,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>240</x>
@@ -208,13 +217,6 @@
      </widget>
     </item>
     <item row="0" column="1">
-     <widget class="QPushButton" name="pushButton_upPermission">
-      <property name="text">
-       <string>升级权限</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2">
      <widget class="QPushButton" name="pushButton_return">
       <property name="text">
        <string>还书</string>
@@ -229,13 +231,6 @@
      </widget>
     </item>
     <item row="1" column="1">
-     <widget class="QPushButton" name="pushButton_downPermisson">
-      <property name="text">
-       <string>降级权限</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
      <widget class="QPushButton" name="pushButton_cPasswd">
       <property name="text">
        <string>重置用户密码</string>
