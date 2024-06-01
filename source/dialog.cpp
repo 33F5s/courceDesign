@@ -112,7 +112,10 @@ void Dialog::LoginSlot(){
         QMessageBox::warning(this,"警告","请检查账号密码");
         return;
     }
-    this->permission=qry.value(0).toInt();
+    if(this->permission>qry.value(0).toInt()){
+        QMessageBox::warning(this,"警告","权限不足");
+        return;
+    }
     QDialog::accept();
 }
 

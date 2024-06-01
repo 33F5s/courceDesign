@@ -91,7 +91,7 @@ void Widget::userSlot(){
 }
 
 void Widget::rootSlot(){
-    Dialog dialog(Login,this);
+    Dialog dialog(Login,this,1);
     if (dialog.exec() == QDialog::Accepted) {
         ui->stackedWidget->setCurrentIndex(rootPageNum);
         emit sendRootUser(dialog.admin(),dialog.getPermission());
