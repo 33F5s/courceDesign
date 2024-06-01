@@ -192,7 +192,7 @@ void userWidget::returnSlot(){
 
 //注销账号
 void userWidget::deleteSlot(){
-    Dialog dialog(DeleteUser,this,2);
+    Dialog dialog(DeleteUser,this,2);   //注销自己账号，赋予最高权限
     dialog.setAdmin(user);
     dialog.setNoEditedAdmin();
     if(dialog.exec()==QDialog::Accepted){
